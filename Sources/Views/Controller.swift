@@ -65,6 +65,16 @@ import UIKit
  */
 open class FastisController<Value: FastisValue>: UIViewController, JTACMonthViewDelegate, JTACMonthViewDataSource {
 
+    public var shortcuts: [FastisShortcut<Value>] = []
+    public var minimumMonthDate: Int?
+    public var maximumMonthDate: Int?
+    public var typeCalendar: Calendar?
+    public var localIdentifier: Locale?
+    public var dateSelected: Date?
+    public var dayNumber: Int?
+    public var maximumDateDisplay: Date?
+    public var numberOfDatesSelected: Int = 0
+
     // MARK: - Outlets
 
     private lazy var cancelBarButtonItem: UIBarButtonItem = {
@@ -73,9 +83,9 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
             customButton.action = #selector(self.cancel)
             return customButton
         }
-
+//self.appearance.cancelButtonTitle
         let barButtonItem = UIBarButtonItem(
-            title: self.appearance.cancelButtonTitle,
+            title:   localIdentifier?.identifier == "EN" ? "Cancel" : "إغلاق" ,
             style: .plain,
             target: self,
             action: #selector(self.cancel)
@@ -90,9 +100,9 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
             customButton.action = #selector(self.done)
             return customButton
         }
-
+        // self.appearance.doneButtonTitle
         let barButtonItem = UIBarButtonItem(
-            title: self.appearance.doneButtonTitle,
+            title: localIdentifier?.identifier == "EN" ? "Done" : "تم",
             style: .done,
             target: self,
             action: #selector(self.done)
@@ -207,15 +217,7 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
      }
      ```
      */
-    public var shortcuts: [FastisShortcut<Value>] = []
-    public var minimumMonthDate: Int?
-    public var maximumMonthDate: Int?
-    public var typeCalendar: Calendar?
-    public var localIdentifier: Locale?
-    public var dateSelected: Date?
-    public var dayNumber: Int?
-    public var maximumDateDisplay: Date?
-    public var numberOfDatesSelected: Int = 0
+
 
 
     /**
@@ -815,7 +817,7 @@ public extension FastisConfig {
 
          Default value — `"Cancel"`
          */
-        public var cancelButtonTitle =  "Cancel"
+        public var cancelButtonTitle =   "Cancel"
 
         /**
          Done button title
