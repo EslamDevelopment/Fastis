@@ -120,7 +120,7 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
     }()
 
     private lazy var weekView: WeekView = {
-        let view = WeekView(calendar: self.config.calendar, config: self.config.weekView)
+        let view = WeekView(calendar: self.config.calendar, config: self.config.weekView,localIdentifier: self.localIdentifier?.identifier)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -131,6 +131,8 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
             calendar: self.config.calendar
         )
         view.currentValue = self.value
+        view.typeCalendar = self.typeCalendar
+        view.localIdentifier = self.localIdentifier
         view.translatesAutoresizingMaskIntoConstraints = false
         view.onClear = { [weak self] in
             self?.clear()
@@ -174,8 +176,13 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
     private var dayFormatter = DateFormatter()
     private var value: Value? {
         didSet {
+//            self.updateSelectedShortcut()
+//            self.currentValueView.currentValue = self.value
+//            self.doneBarButtonItem.isEnabled = self.allowToChooseNilDate || self.value != nil
             self.updateSelectedShortcut()
             self.currentValueView.currentValue = self.value
+            self.currentValueView.typeCalendar = self.typeCalendar
+            self.currentValueView.localIdentifier = self.localIdentifier
             self.doneBarButtonItem.isEnabled = self.allowToChooseNilDate || self.value != nil
         }
     }
@@ -201,6 +208,15 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
      ```
      */
     public var shortcuts: [FastisShortcut<Value>] = []
+    public var minimumMonthDate: Int?
+    public var maximumMonthDate: Int?
+    public var typeCalendar: Calendar?
+    public var localIdentifier: Locale?
+    public var dateSelected: Date?
+    public var dayNumber: Int?
+    public var maximumDateDisplay: Date?
+    public var numberOfDatesSelected: Int = 0
+
 
     /**
      Allow to choose `nil` date
@@ -268,10 +284,16 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
     /// Initiate FastisController
     /// - Parameter config: Configuration parameters
     public init(config: FastisConfig = .default) {
+//        self.config = config
+//        self.appearance = config.controller
+//        self.dayFormatter.locale = config.calendar.locale
+//        self.dayFormatter.calendar = config.calendar
+//        self.dayFormatter.dateFormat = "d"
+//        super.init(nibName: nil, bundle: nil)
         self.config = config
         self.appearance = config.controller
-        self.dayFormatter.locale = config.calendar.locale
-        self.dayFormatter.calendar = config.calendar
+        self.dayFormatter.calendar = typeCalendar
+        self.dayFormatter.locale = localIdentifier?.identifier == "ar_EG" ? Locale(identifier: "ar_EG") : config.calendar.locale
         self.dayFormatter.dateFormat = "d"
         super.init(nibName: nil, bundle: nil)
     }
@@ -339,6 +361,7 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
         if !self.privateCloseOnSelectionImmediately {
             self.view.addSubview(self.currentValueView)
         }
+        self.weekView.localIdentifier = localIdentifier
         self.view.addSubview(self.weekView)
         self.view.addSubview(self.calendarView)
         if !self.shortcuts.isEmpty {
@@ -547,6 +570,8 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
         self.viewConfigs.removeAll()
         self.calendarView.deselectAllDates()
         self.calendarView.reloadData()
+        self.dismiss(animated: false)
+        self.dismissHandler?(.done(self.value))
     }
 
     // MARK: - JTACMonthViewDelegate
@@ -558,6 +583,14 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
 
         if let maximumDate = self.privateMaximumDate,
            let endOfNextMonth = self.config.calendar.date(byAdding: .month, value: 2, to: maximumDate)?
+           .endOfMonth(in: self.config.calendar)
+        {
+            endDate = endOfNextMonth
+        }
+
+        if let maximumDate = self.privateMaximumDate,
+           let maximumMonth =  self.maximumMonthDate,
+           let endOfNextMonth = self.config.calendar.date(byAdding: .month, value: maximumMonth, to: maximumDate)?
            .endOfMonth(in: self.config.calendar)
         {
             endDate = endOfNextMonth
@@ -591,6 +624,8 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
             withReuseIdentifier: self.monthHeaderReuseIdentifier,
             for: indexPath
         ) as! MonthHeader
+        header.localIdentifier = self.localIdentifier
+        header.typeCalender = self.typeCalendar
         header.applyConfig(self.config.monthHeader, calendar: self.config.calendar)
         header.configure(for: range.start)
         if self.privateSelectMonthOnHeaderTap, Value.mode == .range {
@@ -639,10 +674,37 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
         cellState: CellState,
         indexPath: IndexPath
     ) {
+        numberOfDatesSelected += 1
+        if (dayNumber != nil) {
+            dateSelected = date
+            if (numberOfDatesSelected == 1) {
+                let componentDate = getDate(from: dayNumber ?? 0, fromDate: dateSelected!).get(.day, .month, .year)
+                if (dayNumber! <= 3) {
+                    minimumDate = date
+                }
+                maximumDate = typeCalendar?.date(from: DateComponents(year: componentDate.year, month: componentDate.month, day: componentDate.day))
+                DispatchQueue.main.async {
+                    calendar.reloadData()
+                    self.calendarView.reloadData()
+                }
+            }
+        }
         if cellState.selectionType == .some(.userInitiated) {
             self.handleDateTap(in: calendar, date: date)
         } else if let cell {
             self.configureCell(cell, forItemAt: date, cellState: cellState, indexPath: indexPath)
+        }
+    }
+    func getDate(from days: Int, fromDate date: Date) -> Date {
+        let calendar = Calendar.current
+        let now = date
+        let dateComponents = DateComponents(day: days)
+
+        if let futureDate = calendar.date(byAdding: dateComponents, to: now) {
+            return futureDate
+        } else {
+            print("Unable to calculate future date.")
+            return now
         }
     }
 
@@ -653,6 +715,7 @@ open class FastisController<Value: FastisValue>: UIViewController, JTACMonthView
         cellState: CellState,
         indexPath: IndexPath
     ) {
+
         if cellState.selectionType == .some(.userInitiated), Value.mode == .range {
             self.handleDateTap(in: calendar, date: date)
         } else if let cell {
@@ -752,7 +815,7 @@ public extension FastisConfig {
 
          Default value — `"Cancel"`
          */
-        public var cancelButtonTitle = "Cancel"
+        public var cancelButtonTitle =  "Cancel"
 
         /**
          Done button title

@@ -26,13 +26,22 @@ final class WeekView: UIView {
     // MARK: - Variables
 
     private let config: FastisConfig.WeekView
-    private let calendar: Calendar
+    private var calendar: Calendar
+    public  var localIdentifier: Locale?
+    public  var msg = ""
 
     // MARK: - Lifecycle
 
-    init(calendar: Calendar, config: FastisConfig.WeekView) {
+    init(calendar: Calendar, config: FastisConfig.WeekView,localIdentifier: String? = nil) {
+//        self.config = config
+//        self.calendar = calendar
+//        super.init(frame: .zero)
+//        self.configureUI()
+//        self.configureSubviews()
+//        self.configureConstraints()
         self.config = config
         self.calendar = calendar
+        self.calendar.locale = localIdentifier == "en" ? Locale(identifier: "EN") : Locale(identifier: "ar_EG")
         super.init(frame: .zero)
         self.configureUI()
         self.configureSubviews()

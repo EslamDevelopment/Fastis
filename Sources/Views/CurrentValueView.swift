@@ -10,8 +10,10 @@ import UIKit
 
 final class CurrentValueView<Value: FastisValue>: UIView {
 
-    // MARK: - Outlets
+    public var typeCalendar: Calendar?
+    public var localIdentifier: Locale?
 
+    // MARK: - Outlets
     private lazy var label: UILabel = {
         let label = UILabel()
         label.textColor = self.config.placeholderTextColor
@@ -111,12 +113,20 @@ final class CurrentValueView<Value: FastisValue>: UIView {
             self.containerView.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: -self.config.insets.bottom)
         ])
     }
-
     private func updateStateForCurrentValue() {
 
         if let value = self.currentValue as? Date {
 
-            self.label.text = self.dateFormatter.string(from: value)
+            if (typeCalendar?.identifier == .islamicUmmAlQura) {
+                let islamicCalendar = Calendar(identifier: .islamicUmmAlQura)
+                let day = islamicCalendar.component(.day, from: value)
+                let month = islamicCalendar.component(.month, from: value)
+                let year = islamicCalendar.component(.year, from: value)
+                self.label.text = "\(day) \(month) \(year)"
+            } else {
+                self.label.text =  self.dateFormatter.string(from: value)
+            }
+
             self.label.textColor = self.config.textColor
             self.clearButton.alpha = 1
             self.clearButton.isUserInteractionEnabled = true
@@ -128,11 +138,24 @@ final class CurrentValueView<Value: FastisValue>: UIView {
             self.clearButton.isUserInteractionEnabled = true
 
             if value.onSameDay {
-                self.label.text = self.dateFormatter.string(from: value.fromDate)
+                if (typeCalendar?.identifier == .islamicUmmAlQura) {
+                    let islamicCalendar = Calendar(identifier: .islamicUmmAlQura)
+                    let day = islamicCalendar.component(.day, from: value.fromDate)
+                    self.label.text = "\(day) \(HijriDate.getHijriMonth(from: value.fromDate, localIdentifier: self.localIdentifier?.identifier ?? "EN") ?? "")"
+                } else {
+                    self.label.text = self.dateFormatter.string(from: value.fromDate)
+                }
             } else {
-                self.label.text = self.dateFormatter.string(from: value.fromDate) + " – " + self.dateFormatter.string(from: value.toDate)
+                if (typeCalendar?.identifier == .islamicUmmAlQura) {
+                    let islamicCalendar = Calendar(identifier: .islamicUmmAlQura)
+                    let dayFromDate = islamicCalendar.component(.day, from: value.fromDate)
+                    let dayToDate = islamicCalendar.component(.day, from: value.toDate)
+                    self.label.text = "\(dayFromDate) \(HijriDate.getHijriMonth(from: value.fromDate, localIdentifier: self.localIdentifier?.identifier ?? "EN") ?? "")" + " – " +  "\(dayToDate) \( HijriDate.getHijriMonth(from: value.toDate, localIdentifier: self.localIdentifier?.identifier ?? "EN") ?? "")"
+                } else {
+                    self.dateFormatter.locale = Locale(identifier: self.localIdentifier?.identifier ?? "EN")
+                    self.label.text =  self.dateFormatter.string(from: value.fromDate) + " – " + self.dateFormatter.string(from: value.toDate)
+                }
             }
-
         } else {
 
             self.label.textColor = self.config.placeholderTextColor
@@ -151,6 +174,45 @@ final class CurrentValueView<Value: FastisValue>: UIView {
         }
 
     }
+//    private func updateStateForCurrentValue() {
+//
+//        if let value = self.currentValue as? Date {
+//
+//            self.label.text = self.dateFormatter.string(from: value)
+//            self.label.textColor = self.config.textColor
+//            self.clearButton.alpha = 1
+//            self.clearButton.isUserInteractionEnabled = true
+//
+//        } else if let value = self.currentValue as? FastisRange {
+//
+//            self.label.textColor = self.config.textColor
+//            self.clearButton.alpha = 1
+//            self.clearButton.isUserInteractionEnabled = true
+//
+//            if value.onSameDay {
+//                self.label.text = self.dateFormatter.string(from: value.fromDate)
+//            } else {
+//                self.label.text = self.dateFormatter.string(from: value.fromDate) + " – " + self.dateFormatter.string(from: value.toDate)
+//            }
+//
+//        } else {
+//
+//            self.label.textColor = self.config.placeholderTextColor
+//            self.clearButton.alpha = 0
+//            self.clearButton.isUserInteractionEnabled = false
+//
+//            switch Value.mode {
+//            case .range:
+//                self.label.text = self.config.placeholderTextForRanges
+//
+//            case .single:
+//                self.label.text = self.config.placeholderTextForSingle
+//
+//            }
+//
+//        }
+//
+//    }
 
     // MARK: - Actions
 

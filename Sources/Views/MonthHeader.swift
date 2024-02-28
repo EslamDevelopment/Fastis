@@ -31,6 +31,9 @@ final class MonthHeader: JTACMonthReusableView {
     internal var tapHandler: (() -> Void)?
     private lazy var monthFormatter = DateFormatter()
 
+    public var typeCalender: Calendar?
+    public var localIdentifier: Locale?
+
     // MARK: - Lifecycle
 
     override init(frame: CGRect) {
@@ -65,6 +68,18 @@ final class MonthHeader: JTACMonthReusableView {
 
     internal func configure(for date: Date) {
         self.monthLabel.text = self.monthFormatter.string(from: date).capitalizingFirstLetter()
+
+        self.monthLabel.textAlignment = self.localIdentifier?.identifier == "ar_EG" ? .right : .left
+        if (typeCalender?.identifier == .islamicUmmAlQura) {
+            let hijriDate = HijriDate.convertGregorianToHijri(date: date)
+            if let hijriMonth = HijriDate.getHijriMonth(from: date, localIdentifier: self.localIdentifier?.identifier ?? "EN") {
+                self.monthLabel.text = "\(hijriDate.year) \(hijriMonth)"
+            }
+        } else {
+            self.monthFormatter.locale =  Locale(identifier: self.localIdentifier?.identifier ?? "EN")
+            self.monthLabel.text = self.monthFormatter.string(from: date).capitalizingFirstLetter()
+        }
+
     }
 
     // MARK: - Actions
