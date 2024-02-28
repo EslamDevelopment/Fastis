@@ -153,11 +153,11 @@ public extension FastisConfig {
 
          Default value — `.current`
          */
-        @available(*, unavailable, message: "Use locale FastisConfig.calendar.locale")
-        public var monthLocale: Locale {
-            .autoupdatingCurrent
-        }
-
+//        @available(*, unavailable, message: "Use locale FastisConfig.calendar.locale")
+//        public var monthLocale: Locale {
+//            .autoupdatingCurrent
+//        }
+        public var monthLocale: Locale = .autoupdatingCurrent
         /**
          Height of month view
 

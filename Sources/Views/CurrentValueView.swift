@@ -300,9 +300,10 @@ public extension FastisConfig {
 
          Default value — `Locale.autoupdatingCurrent`
          */
-        @available(*, unavailable, message: "Use locale in FastisConfig.calendar.locale")
-        public var locale: Locale {
-            .autoupdatingCurrent
-        }
+//        @available(*, unavailable, message: "Use locale in FastisConfig.calendar.locale")
+//        public var locale: Locale {
+//            .autoupdatingCurrent
+//        }
+        public var locale: Locale = .autoupdatingCurrent
     }
 }
